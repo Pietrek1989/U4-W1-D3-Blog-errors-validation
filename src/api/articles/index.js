@@ -1,44 +1,43 @@
 import Express from "express";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import uniqid from "uniqid";
 import createHttpError from "http-errors";
 import { checkArticlesSchema, triggerBadRequest } from "./validation.js";
+import {
+  getArticles,
+  getComments,
+  writeArticles,
+  writeComments,
+} from "../../lib/fs-tools.js";
 
 const articlesRouter = Express.Router();
-const articlesJSONPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "articles.json"
-);
-const getArticles = () => JSON.parse(fs.readFileSync(articlesJSONPath));
-const writeArticles = (articleArray) => {
-  fs.writeFileSync(articlesJSONPath, JSON.stringify(articleArray));
-};
 
 articlesRouter.post(
   "/",
   checkArticlesSchema,
   triggerBadRequest,
-  (req, res, next) => {
-    const newArticle = {
-      ...req.body,
-      id: uniqid(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  async (req, res, next) => {
+    try {
+      const newArticle = {
+        ...req.body,
+        id: uniqid(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    const articleArray = getArticles();
-    articleArray.push(newArticle);
-    writeArticles(articleArray);
+      const articleArray = await getArticles();
+      articleArray.push(newArticle);
+      await writeArticles(articleArray);
 
-    res.status(201).send({ id: newArticle.id });
+      res.status(201).send({ id: newArticle.id });
+    } catch (error) {
+      console.log(error);
+    }
   }
 );
 
-articlesRouter.get("/", (req, res, next) => {
+articlesRouter.get("/", async (req, res, next) => {
   try {
-    const articleArray = getArticles();
+    const articleArray = await getArticles();
     if (req.query && req.query.category) {
       const filteredArticles = articleArray.filter(
         (article) => article.category === req.query.category
@@ -52,15 +51,15 @@ articlesRouter.get("/", (req, res, next) => {
   }
 });
 
-articlesRouter.get("/:articleId", (req, res, next) => {
+articlesRouter.get("/:articleId", async (req, res, next) => {
   try {
-    const articleArray = getArticles();
+    const articleArray = await getArticles();
 
     const chosenArticle = articleArray.find(
       (article) => article.id === req.params.articleId
     );
     if (chosenArticle) {
-      res.send(foundBook);
+      res.send(chosenArticle);
     } else {
       next(
         createHttpError(
@@ -78,26 +77,21 @@ articlesRouter.put(
   "/:articleId",
   checkArticlesSchema,
   triggerBadRequest,
-  (req, res, next) => {
+  async (req, res, next) => {
     try {
-      const articleArray = getArticles();
-
+      const articleArray = await getArticles();
       const index = articleArray.findIndex(
         (article) => article.id === req.params.articleId
       );
       if (index !== -1) {
         const oldArticle = articleArray[index];
-
         const newArticle = {
           ...oldArticle,
           ...req.body,
           updatedAt: new Date(),
         };
-
         articleArray[index] = newArticle;
-
-        writeArticles(articleArray);
-
+        await writeArticles(articleArray);
         res.send(newArticle);
       } else {
         next(
@@ -113,23 +107,47 @@ articlesRouter.put(
   }
 );
 
-articlesRouter.delete("/:articleId", (req, res, next) => {
+articlesRouter.delete("/:articleId", async (req, res, next) => {
   try {
-    const articleArray = getArticles();
-
+    const articleArray = await getArticles();
     const remainingArticles = articleArray.filter(
       (article) => article.id !== req.params.articleId
     );
-
     if (articleArray.length !== remainingArticles.length) {
-      writeBooks(remainingBooks);
-
+      await writeArticles(remainingArticles);
       res.status(204).send();
     } else {
       next(
         createHttpError(404, `Book with id ${req.params.articleId} not found!`)
       );
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+articlesRouter.post("/:articleId/comments", async (req, res, next) => {
+  try {
+    const newComment = {
+      ...req.body,
+      id: uniqid(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const commentArray = await getComments();
+    commentArray.push(newComment);
+    await writeComments(commentArray);
+
+    res.status(201).send({ id: newComment.id });
+  } catch (error) {
+    console.log(error);
+  }
+});
+articlesRouter.get("/:articleId/comments", async (req, res, next) => {
+  try {
+    const commentsArray = await getComments();
+    res.send(commentsArray);
   } catch (error) {
     next(error);
   }

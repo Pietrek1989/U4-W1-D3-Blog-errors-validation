@@ -1,6 +1,3 @@
-import { checkSchema, validationResult } from "express-validator";
-import createHttpError from "http-errors";
-
 const articlesSchema = {
   title: {
     in: ["body"],
@@ -28,7 +25,7 @@ const articlesSchema = {
         "Cover is a mandatory field and needs to be a link in string format!",
       value: {
         in: ["body"],
-        isNumeric: {
+        isInt: {
           errorMessage:
             "time valueis a mandatory field and needs to be a link in string format!",
         },
@@ -70,20 +67,4 @@ const articlesSchema = {
         "Content is a mandatory field and needs to be a link in string format!",
     },
   },
-};
-
-export const checkArticlesSchema = checkSchema(articlesSchema);
-
-export const triggerBadRequest = (req, res, next) => {
-  const errors = validationResult(req);
-  console.log(errors.array());
-  if (errors.isEmpty()) {
-    next();
-  } else {
-    next(
-      createHttpError(400, "Errors during book validation", {
-        errorsList: errors.array(),
-      })
-    );
-  }
 };
