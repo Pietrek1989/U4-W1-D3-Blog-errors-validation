@@ -2,12 +2,7 @@ import Express from "express";
 import uniqid from "uniqid";
 import createHttpError from "http-errors";
 import { checkArticlesSchema, triggerBadRequest } from "./validation.js";
-import {
-  getArticles,
-  getComments,
-  writeArticles,
-  writeComments,
-} from "../../lib/fs-tools.js";
+import { getArticles, writeArticles } from "../../lib/fs-tools.js";
 
 const articlesRouter = Express.Router();
 
@@ -134,20 +129,33 @@ articlesRouter.post("/:articleId/comments", async (req, res, next) => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    const articleArray = await getArticles();
+    const index = articleArray.findIndex(
+      (article) => article.id === req.params.articleId
+    );
+    if (index !== -1) {
+      const oldArticle = articleArray[index];
+      const updatedArticle = {
+        ...oldArticle,
+        comments: [...oldArticle.comments, newComment],
+      };
+      articleArray[index] = updatedArticle;
+      await writeArticles(articleArray);
 
-    const commentArray = await getComments();
-    commentArray.push(newComment);
-    await writeComments(commentArray);
-
-    res.status(201).send({ id: newComment.id });
+      res.status(201).send({ id: newComment.id, newComment });
+    }
   } catch (error) {
     console.log(error);
   }
 });
 articlesRouter.get("/:articleId/comments", async (req, res, next) => {
   try {
-    const commentsArray = await getComments();
-    res.send(commentsArray);
+    const articleArray = await getArticles();
+    const index = articleArray.findIndex(
+      (article) => article.id === req.params.articleId
+    );
+
+    res.send(articleArray[index].comments);
   } catch (error) {
     next(error);
   }
