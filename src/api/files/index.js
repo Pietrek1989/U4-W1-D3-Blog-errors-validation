@@ -17,7 +17,7 @@ const cloudinaryUploader = multer({
   storage: new CloudinaryStorage({
     cloudinary,
     params: {
-      folder: "U4-W1-D4-files-uploads/img",
+      folder: "articles/img",
     },
   }),
 }).single("avatar");
@@ -28,7 +28,6 @@ filesRouter.post(
   async (req, res, next) => {
     try {
       console.log("FILE:", req.file);
-      console.log("BODY:", req.body);
       // const originalFileExtension = extname(req.file.originalname);
       // const fileName = req.params.authorId + originalFileExtension;
       // await saveAuthorsAvatars(fileName, req.file.buffer);
@@ -40,7 +39,7 @@ filesRouter.post(
         const oldAuthor = authorsArray[index];
         const updatedAuthor = {
           ...oldAuthor,
-          avatar: `http://localhost:3001/img/authors/${fileName}`,
+          avatar: `${req.file.path}`,
         };
         authorsArray[index] = updatedAuthor;
         await writeAuthors(authorsArray);
