@@ -9,19 +9,29 @@ import {
   writeArticles,
   writeAuthors,
 } from "../../lib/fs-tools.js";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 const filesRouter = Express.Router();
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "U4-W1-D4-files-uploads/img",
+    },
+  }),
+}).single("avatar");
 
 filesRouter.post(
   "/:authorId/authorSingle",
-  multer().single("avatar"),
+  cloudinaryUploader,
   async (req, res, next) => {
     try {
       console.log("FILE:", req.file);
       console.log("BODY:", req.body);
-      const originalFileExtension = extname(req.file.originalname);
-      const fileName = req.params.authorId + originalFileExtension;
-      await saveAuthorsAvatars(fileName, req.file.buffer);
+      // const originalFileExtension = extname(req.file.originalname);
+      // const fileName = req.params.authorId + originalFileExtension;
+      // await saveAuthorsAvatars(fileName, req.file.buffer);
       const authorsArray = await getAuthors();
       const index = authorsArray.findIndex(
         (author) => author.id === req.params.authorId
@@ -51,13 +61,13 @@ filesRouter.post(
 
 filesRouter.post(
   "/:articleId/articleSingle",
-  multer().single("postPic"),
+  cloudinaryUploader,
   async (req, res, next) => {
     try {
       console.log("FILE:", req.file);
       console.log("BODY:", req.body);
-      const originalFileExtension = extname(req.file.originalname);
-      const fileName = req.params.articleId + originalFileExtension;
+      // const originalFileExtension = extname(req.file.originalname);
+      // const fileName = req.params.articleId + originalFileExtension;
       await saveArticlePic(fileName, req.file.buffer);
 
       const articleArray = await getArticles();
