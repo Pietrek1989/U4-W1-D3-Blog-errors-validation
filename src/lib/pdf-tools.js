@@ -11,16 +11,11 @@ export const getPDFReadableStream = async (article) => {
     },
   };
   const printer = new PdfPrinter(fonts);
+  //   const response = await fetch(article.cover);
+  //   const imageData = await response.arrayBuffer();
 
   const docDefinition = {
-    content: [
-      article.title,
-      article.category,
-      {
-        image: article.cover,
-        width: 200,
-      },
-    ],
+    content: [article.title, article.category],
 
     defaultStyle: {
       font: "Helvetica",
@@ -28,12 +23,7 @@ export const getPDFReadableStream = async (article) => {
   };
 
   const pdfReadableStream = printer.createPdfKitDocument(docDefinition, {});
-  const chunks = [];
-  pdfReadableStream.on("data", (chunk) => {
-    chunks.push(chunk);
-  });
-  pdfReadableStream.on("end", () => {
-    const pdfBuffer = Buffer.concat(chunks);
-    return pdfBuffer;
-  });
+  pdfReadableStream.end();
+
+  return pdfReadableStream;
 };
