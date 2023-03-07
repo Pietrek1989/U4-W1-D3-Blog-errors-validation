@@ -23,7 +23,7 @@ export const getPDFReadableStream = (article) => {
               "Category",
               "Reading time",
               "Author",
-              "Created at",
+              "Image link",
               "Last Updated",
             ],
             [
@@ -32,8 +32,8 @@ export const getPDFReadableStream = (article) => {
               `${article.readTime.value} -
               ${article.readTime.unit}`,
               article.author.name,
+              article.cover,
               article.createdAt,
-              article.updatedAt,
             ],
           ],
         },
