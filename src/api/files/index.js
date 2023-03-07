@@ -11,6 +11,8 @@ import {
 } from "../../lib/fs-tools.js";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { getPDFReadableStream } from "../../lib/pdf-tools.js";
+import { pipeline } from "stream";
 
 const filesRouter = Express.Router();
 const cloudinaryUploader = multer({
@@ -21,6 +23,14 @@ const cloudinaryUploader = multer({
     },
   }),
 }).single("avatar");
+const cloudinaryUploaderArticle = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "articles/posts",
+    },
+  }),
+}).single("postPic");
 
 filesRouter.post(
   "/:authorId/authorSingle",
@@ -60,14 +70,14 @@ filesRouter.post(
 
 filesRouter.post(
   "/:articleId/articleSingle",
-  cloudinaryUploader,
+  cloudinaryUploaderArticle,
   async (req, res, next) => {
     try {
       console.log("FILE:", req.file);
       console.log("BODY:", req.body);
       // const originalFileExtension = extname(req.file.originalname);
       // const fileName = req.params.articleId + originalFileExtension;
-      await saveArticlePic(fileName, req.file.buffer);
+      // await saveArticlePic(fileName, req.file.buffer);
 
       const articleArray = await getArticles();
       const index = articleArray.findIndex(
@@ -77,7 +87,7 @@ filesRouter.post(
         const oldArticle = articleArray[index];
         const newArticle = {
           ...oldArticle,
-          cover: `http://localhost:3001/img/blogPosts/${fileName}`,
+          cover: `${req.file.path}`,
         };
         articleArray[index] = newArticle;
         await writeArticles(articleArray);
@@ -95,5 +105,32 @@ filesRouter.post(
     }
   }
 );
+
+filesRouter.get("/:articleId/pdf", async (req, res, next) => {
+  try {
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${req.params.articleId}.pdf`
+    ); // Without this header the browser will try to open (not save) the file.
+    // This header will tell the browser to open the "save file as" dialog
+    // SOURCE (READABLE STREAM pdfmake) --> DESTINATION (WRITABLE STREAM http response)
+    const articleArray = await getArticles();
+    const index = articleArray.findIndex(
+      (article) => article.id === req.params.articleId
+    );
+    if (index !== -1) {
+      const targetedArticle = articleArray[index];
+
+      const source = getPDFReadableStream(targetedArticle);
+      const destination = res;
+
+      pipeline(source, destination, (err) => {
+        if (err) console.log(err);
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default filesRouter;
