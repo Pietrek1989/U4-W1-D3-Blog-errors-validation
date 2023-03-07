@@ -17,7 +17,7 @@ export const getPDFReadableStream = (article) => {
       article.title,
       article.category,
       {
-        image: article.cover,
+        image: `data:image/jpeg;base64,/${article.cover}`,
         width: 200,
       },
     ],
