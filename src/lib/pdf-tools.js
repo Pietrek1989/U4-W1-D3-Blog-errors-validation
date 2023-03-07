@@ -16,10 +16,10 @@ export const getPDFReadableStream = (article) => {
     content: [
       article.title,
       article.category,
-      //   {
-      //     image: article.cover,
-      //     width: 200,
-      //   },
+      {
+        image: article.cover,
+        width: 200,
+      },
     ],
 
     defaultStyle: {
