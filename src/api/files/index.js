@@ -1,11 +1,8 @@
 import Express from "express";
 import multer from "multer";
-import { extname } from "path";
 import {
   getArticles,
   getAuthors,
-  saveArticlePic,
-  saveAuthorsAvatars,
   writeArticles,
   writeAuthors,
 } from "../../lib/fs-tools.js";
@@ -111,9 +108,7 @@ filesRouter.get("/:articleId/pdf", async (req, res, next) => {
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=${req.params.articleId}.pdf`
-    ); // Without this header the browser will try to open (not save) the file.
-    // This header will tell the browser to open the "save file as" dialog
-    // SOURCE (READABLE STREAM pdfmake) --> DESTINATION (WRITABLE STREAM http response)
+    );
     const articleArray = await getArticles();
     const index = articleArray.findIndex(
       (article) => article.id === req.params.articleId
@@ -121,12 +116,19 @@ filesRouter.get("/:articleId/pdf", async (req, res, next) => {
     if (index !== -1) {
       const targetedArticle = articleArray[index];
 
-      const source = getPDFReadableStream(targetedArticle);
+      const source = await getPDFReadableStream(targetedArticle);
       const destination = res;
 
       pipeline(source, destination, (err) => {
         if (err) console.log(err);
       });
+    } else {
+      next(
+        createHttpError(
+          404,
+          `article with id ${req.params.articleId} not found!`
+        )
+      );
     }
   } catch (error) {
     next(error);

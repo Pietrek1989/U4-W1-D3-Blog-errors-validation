@@ -1,6 +1,7 @@
 import PdfPrinter from "pdfmake";
+import imageToBase64 from "image-to-base64";
 
-export const getPDFReadableStream = (article) => {
+export const getPDFReadableStream = async (article) => {
   // Define font files
   const fonts = {
     Helvetica: {
@@ -11,6 +12,7 @@ export const getPDFReadableStream = (article) => {
     },
   };
   const printer = new PdfPrinter(fonts);
+  const imageEncoded = await imageToBase64(article.cover);
 
   const docDefinition = {
     content: [
@@ -38,10 +40,11 @@ export const getPDFReadableStream = (article) => {
           ],
         },
       },
-      //   {
-      //     image: `data:image/jpeg;base64,/${article.cover}`,
-      //     width: 200,
-      //   },
+
+      {
+        image: `data:image/jpeg;base64,${imageEncoded}`,
+        width: 200,
+      },
     ],
 
     defaultStyle: {
