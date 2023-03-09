@@ -3,6 +3,7 @@ import multer from "multer";
 import {
   getArticles,
   getAuthors,
+  getAuthorsJSONReadableStream,
   writeArticles,
   writeAuthors,
 } from "../../lib/fs-tools.js";
@@ -10,6 +11,8 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { getPDFReadableStream } from "../../lib/pdf-tools.js";
 import { pipeline } from "stream";
+import { sendsRegistrationEmail } from "../../lib/email-tools.js";
+import { Transform } from "json2csv";
 
 const filesRouter = Express.Router();
 const cloudinaryUploader = multer({
@@ -130,6 +133,33 @@ filesRouter.get("/:articleId/pdf", async (req, res, next) => {
         )
       );
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+filesRouter.post("/email", async (req, res, next) => {
+  try {
+    // 1. Receive user's data in req.body
+    const { email } = req.body;
+    // 2. Save him/her in db
+    // 3. Send email to new user
+    await sendsRegistrationEmail(email);
+    res.send({ message: "email sent to" + email });
+  } catch (error) {
+    next(error);
+  }
+});
+
+filesRouter.get("/csv", (req, res, next) => {
+  try {
+    res.setHeader("Content-Disposition", "attachment; filename=authorscsv");
+    const source = getAuthorsJSONReadableStream();
+    const transform = new Transform({ fields: ["name", "surname", "email"] });
+    const destination = res;
+    pipeline(source, transform, destination, (err) => {
+      if (err) console.log(err);
+    });
   } catch (error) {
     next(error);
   }

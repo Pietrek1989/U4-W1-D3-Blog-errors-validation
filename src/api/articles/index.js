@@ -3,6 +3,7 @@ import uniqid from "uniqid";
 import createHttpError from "http-errors";
 import { checkArticlesSchema, triggerBadRequest } from "./validation.js";
 import { getArticles, writeArticles } from "../../lib/fs-tools.js";
+import { sendsPostNoticationEmail } from "../../lib/email-tools.js";
 
 const articlesRouter = Express.Router();
 
@@ -22,7 +23,7 @@ articlesRouter.post(
       const articleArray = await getArticles();
       articleArray.push(newArticle);
       await writeArticles(articleArray);
-
+      sendsPostNoticationEmail(newArticle);
       res.status(201).send({ id: newArticle.id });
     } catch (error) {
       console.log(error);

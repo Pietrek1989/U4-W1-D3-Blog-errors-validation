@@ -1,7 +1,8 @@
 import Express from "express";
-
 import uniqid from "uniqid";
+
 import { getAuthors, writeAuthors } from "../../lib/fs-tools.js";
+import createHttpError from "http-errors";
 
 const authorsRouter = Express.Router();
 
@@ -54,7 +55,7 @@ authorsRouter.get("/:authorId", async (request, response, next) => {
       next(
         createHttpError(
           404,
-          `authorS with id ${req.params.authorId} not found!`
+          `authorS with id ${request.params.authorId} not found!`
         )
       );
     }
@@ -82,7 +83,10 @@ authorsRouter.put("/:authorId", async (request, response, next) => {
       response.send(updatedAuthor);
     } else {
       next(
-        createHttpError(404, `author with id ${req.params.authorId} not found!`)
+        createHttpError(
+          404,
+          `author with id ${request.params.authorId} not found!`
+        )
       );
     }
   } catch (error) {
@@ -101,7 +105,10 @@ authorsRouter.delete("/:authorId", async (request, response, next) => {
       response.status(204).send();
     } else {
       next(
-        createHttpError(404, `author with id ${req.params.authorId} not found!`)
+        createHttpError(
+          404,
+          `author with id ${request.params.authorId} not found!`
+        )
       );
     }
   } catch (error) {
